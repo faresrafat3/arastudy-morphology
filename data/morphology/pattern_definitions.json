@@ -1,0 +1,23 @@
+[
+  {"id": 0, "name": "فعل", "description": "Base triliteral verb pattern"},
+  {"id": 1, "name": "فعيل", "description": "Adjectival/intensive pattern"},
+  {"id": 2, "name": "فاعل", "description": "Active participle pattern"},
+  {"id": 3, "name": "مفعول", "description": "Passive participle pattern"},
+  {"id": 4, "name": "فعال", "description": "Nominal pattern"},
+  {"id": 5, "name": "فعالة", "description": "Verbal noun pattern"},
+  {"id": 6, "name": "مفعل", "description": "Place/instrument noun pattern"},
+  {"id": 7, "name": "مفعلة", "description": "Feminine place/instrument noun"},
+  {"id": 8, "name": "تفعيل", "description": "Masdar of form II"},
+  {"id": 9, "name": "إفعال", "description": "Masdar of form IV"},
+  {"id": 10, "name": "فعول", "description": "Plural/intensive nominal"},
+  {"id": 11, "name": "افتعال", "description": "Masdar of form VIII"},
+  {"id": 12, "name": "استفعال", "description": "Masdar of form X"},
+  {"id": 13, "name": "فعلان", "description": "Adjectival emphatic"},
+  {"id": 14, "name": "فعيلة", "description": "Feminine adjectival"},
+  {"id": 15, "name": "أفعل", "description": "Comparative/superlative"},
+  {"id": 16, "name": "تفاعل", "description": "Reciprocal masdar"},
+  {"id": 17, "name": "انفعال", "description": "Masdar of form VII"},
+  {"id": 18, "name": "مفاعلة", "description": "Verbal interaction noun"},
+  {"id": 19, "name": "فعّال_جمع", "description": "Broken plural/agentive"},
+  {"id": 20, "name": "فعلة", "description": "Singulative/feminine derivation"}
+]

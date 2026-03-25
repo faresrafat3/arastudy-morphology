@@ -1,0 +1,11 @@
+model:
+  name: "AraStudy-30M"
+  dim: 512
+  n_layers: 6
+  n_heads: 8
+  max_seq_len: 512
+  dropout: 0.1
+  norm: "rmsnorm"
+  ffn: "swiglu"
+  position: "rope"
+  weight_tying: true

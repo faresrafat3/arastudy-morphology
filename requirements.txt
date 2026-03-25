@@ -1,0 +1,9 @@
+torch>=2.1
+sentencepiece>=0.2
+numpy>=1.24
+camel-tools>=1.5
+pyyaml>=6.0
+tqdm
+matplotlib
+scikit-learn
+pytest

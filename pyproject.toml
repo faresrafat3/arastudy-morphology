@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arastudy"
+version = "0.1.0"
+description = "AraStudy: Factored Morphological Embeddings for Arabic LMs"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "AraStudy Team" }
+]
+dependencies = [
+  "torch>=2.1",
+  "sentencepiece>=0.2",
+  "numpy>=1.24",
+  "camel-tools>=1.5",
+  "pyyaml>=6.0",
+  "tqdm",
+  "matplotlib",
+  "scikit-learn",
+  "pytest"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

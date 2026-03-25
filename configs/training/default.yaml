@@ -1,0 +1,13 @@
+training:
+  total_steps: 60000
+  batch_size: 16
+  grad_accum_steps: 4
+  learning_rate: 3.0e-4
+  warmup_steps: 1000
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  precision: "fp16"
+  eval_every: 2000
+  save_every: 5000
+  generation_every: 5000
+  early_stopping_patience: 10
