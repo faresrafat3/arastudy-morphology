@@ -23,6 +23,7 @@ dist/
 
 # Data and artifacts
 data/raw/
+data/processed/
 data/tokenized/
 results/
 

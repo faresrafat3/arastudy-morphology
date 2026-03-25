@@ -7,3 +7,4 @@ tqdm
 matplotlib
 scikit-learn
 pytest
+datasets>=2.14
