@@ -35,6 +35,10 @@ From the root k-t-b (كتب, "writing"), Arabic derives:
 | مَفْعُول | مَكْتُوب | written | passive participle |
 | فِعَال | كِتَاب | book | noun |
 | فِعَالَة | كِتَابَة | writing | verbal noun |
+| تَفْعِيل | تَعْلِيم | teaching | verbal noun (II) |
+| اِسْتِفْعَال | اِسْتِخْرَاج | extraction | verbal noun (X) |
+| اِفْتِعَال | اِجْتِمَاع | meeting | verbal noun (VIII) |
+| اِنْفِعَال | اِنْفِجَار | explosion | verbal noun (VII) |
 | مَفْعَلَة | مَكْتَبَة | library | place noun |
 
 This productive system generates dozens of related words from a single root, creating systematic families of morphologically related forms. The Arabic root inventory contains approximately 5,000-10,000 roots, of which roughly 1,500-2,000 are commonly used in modern text.
@@ -44,6 +48,8 @@ This productive system generates dozens of related words from a single root, cre
 Standard subword tokenizers such as BPE (Sennrich et al., 2016) segment text based on statistical frequency rather than morphological structure. Our analysis of BPE-16K trained on Arabic Wikipedia reveals that approximately 48% of regular Arabic morpheme boundaries are broken by BPE segmentation (Section 4.1), with this rate remaining stable across vocabulary sizes (8K-32K), indicating a fundamental limitation of frequency-based tokenization for morphologically rich languages.
 
 This misalignment between tokenization and morphological structure means that language models must discover morphological relationships implicitly from co-occurrence patterns, rather than benefiting from explicit structural information.
+
+Additionally, most Arabic text is written without diacritical marks (tashkeel), which encode case endings and short vowels. This means that models must disambiguate morphological forms from context alone, adding to the challenge.
 
 ### 2.3 Morphological Categories
 
@@ -57,7 +63,7 @@ Arabic words fall into several morphological categories relevant to our analysis
 
 ## 3. Related Work
 ### 3.1 Arabic Language Models
-Recent years have seen growing interest in Arabic-specific language models. CAMeLBERT (Inoue et al., 2021) trained multiple BERT variants on Arabic text and demonstrated through probing experiments that encoder-based models partially capture morphological information. Jais (Sengupta et al., 2023) introduced an Arabic-English bilingual LLM with Arabic-aware BPE tokenization, showing that morphological pre-segmentation improves tokenization quality. ArabERT (Antoun et al., 2020) provided early Arabic BERT models using WordPiece tokenization. However, none of these works explicitly encode morphological structure in the model architecture or training data for small decoder-only models.
+Recent years have seen growing interest in Arabic-specific language models. CAMeLBERT (Inoue et al., 2021) trained multiple BERT variants on Arabic text and demonstrated through probing experiments that encoder-based models partially capture morphological information. Jais (Sengupta et al., 2023) introduced an Arabic-English bilingual LLM with Arabic-aware BPE tokenization, showing that morphological pre-segmentation improves tokenization quality. ArabERT (Antoun et al., 2020) provided early Arabic BERT models using WordPiece tokenization. SILMA (2024) introduced efficient Arabic LMs targeting edge deployment. Kuwain (2024) explored bilingual Arabic-English injection for small models. However, none of these works explicitly encode morphological structure in the model architecture or training data for small decoder-only models.
 
 ### 3.2 Morphological NLP
 Cotterell and Schütze (2018) explored morphology-aware word embeddings in the pre-transformer era, demonstrating that morphological information improves static word representations. More recently, probing studies have shown that large pretrained models implicitly learn morphological features (Edmiston, 2020), though the extent of this learning in small models remains understudied, particularly for Arabic.
@@ -129,6 +135,8 @@ $$e_t = E_{tok}(x_t) + \alpha \cdot E_{root}(r_t)$$
 
 where $E_{tok}$ is the standard BPE embedding, $E_{root}$ is a learned root embedding table (1,015 roots × 512 dimensions = 520K parameters), $r_t$ is the root ID for token $x_t$ (0 for unknown), and $\alpha$ is a learned scalar scaling factor initialized to 0.1.
 
+We initialize $\alpha = 0.1$ to prevent the randomly initialized root embeddings from disrupting the pretrained token embeddings in early training. The model learns to increase $\alpha$ as root embeddings become meaningful.
+
 This adds only 520K parameters (1.8% increase over the baseline), preserves weight tying between input and output embeddings, and requires no changes to the transformer architecture beyond the embedding layer.
 
 Tokens without a known root (61% of vocabulary) receive only the standard BPE embedding, functioning as an automatic fallback.
@@ -143,6 +151,14 @@ Tokens without a known root (61% of vocabulary) receive only the standard BPE em
 
 **Training duration.** Based on validation loss monitoring, we find that the 28.6M baseline overfits after approximately 42K steps and the 10M baseline after approximately 8K steps. We use best-checkpoint selection based on validation loss with early stopping (patience = 5 evaluations).
 
+We define Root Clustering Score (RCS) as:
+
+$$
+	ext{RCS} = \frac{1}{|S|} \sum_{(i,j) \in S} \cos(e_i, e_j) - \frac{1}{|D|} \sum_{(i,k) \in D} \cos(e_i, e_k)
+$$
+
+where $S$ is the set of same-root word pairs and $D$ is the set of different-root pairs.
+
 **Evaluation metrics.** We report: (1) Root Clustering Score (RCS), measuring whether embeddings of morphologically related words are more similar than unrelated words; (2) Perplexity (PPL) on held-out validation data; (3) statistical significance via bootstrap permutation test (n=1,000). Layer-wise probing examines morphological information at each transformer layer.
 
 ## 5. Experiments and Results
@@ -152,7 +168,7 @@ We first investigate whether standard training leads to morphological representa
 
 **Root Clustering Score.** The 28.6M baseline achieves RCS = 0.132 (intra-root similarity 0.514 vs. inter-root similarity 0.382). Bootstrap permutation testing (n=1,000) confirms this is highly significant (p < 0.001, 9.5σ above the random baseline mean of 0.000 ± 0.014).
 
-**Layer-wise analysis.** Figure 1 reveals a striking pattern: morphological information is concentrated in the earliest layer (Layer 1: RCS = 0.169) and diminishes monotonically through later layers, becoming negative by Layer 3 (RCS = −0.011 to −0.034). This suggests the model initially captures morphological similarity through orthographic overlap but progressively overwrites it with contextual/semantic representations.
+**Layer-wise analysis.** Figure 1 reveals a striking pattern: morphological information is concentrated in the earliest layer (Layer 1: RCS = 0.169) and diminishes monotonically through later layers, becoming negative by Layer 3 (RCS = −0.011 to −0.034). This suggests the model initially represents morphological similarity through orthographic overlap but is progressively replaced by contextual representations.
 
 This pattern is consistent with neurolinguistic evidence showing that morphological processing precedes semantic processing in human language comprehension (~150ms vs ~400ms; Rastle et al., 2004).
 
@@ -278,7 +294,7 @@ We release our code, morphological training data, root embedding implementation,
 
 ### 7B. Conclusion (If gains are modest)
 
-We present the first systematic study of morphological awareness in small Arabic decoder-only transformers. Our key finding is that a 28.6M-parameter model trained on Arabic Wikipedia achieves statistically significant morphological awareness (RCS = 0.132, p < 0.001) without explicit morphological supervision. This awareness is concentrated in early layers, mirroring the hierarchy of morphological and semantic processing observed in human language comprehension.
+We present the first systematic study of morphological awareness in small Arabic decoder-only transformers. Our key finding is that a 28.6M-parameter model trained on Arabic Wikipedia achieves statistically significant morphological awareness (RCS = 0.132, p < 0.001) without explicit morphological supervision. This awareness is concentrated in early layers, paralleling the hierarchy of morphological and semantic processing observed in human language comprehension.
 
 Our morphological interventions (training data and root embeddings) show [modest] improvements, suggesting that standard distributional learning captures much of the morphological structure available in Arabic text. This finding has implications for Arabic NLP: rather than adding morphological features, researchers may benefit from focusing on other bottlenecks in small model performance.
 
