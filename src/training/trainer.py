@@ -18,6 +18,30 @@ from src.data.tokenizer import pretokenize
 from src.models.transformer import AraStudyTransformer, count_parameters, from_config
 
 
+def _uses_root_embeddings(model: torch.nn.Module) -> bool:
+    return hasattr(model, "root_embeddings")
+
+
+def _forward_with_optional_roots(
+    model: torch.nn.Module,
+    x: torch.Tensor,
+    y: torch.Tensor,
+    root_lookup: np.ndarray | None,
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
+    if _uses_root_embeddings(model):
+        if root_lookup is None:
+            raise ValueError(
+                "Model uses root embeddings but root lookup was not loaded. "
+                "Expected data/morphology/root_ids_lookup.npy"
+            )
+        x_np = x.detach().cpu().numpy()
+        root_ids_np = root_lookup[x_np]
+        root_ids = torch.from_numpy(root_ids_np).to(device)
+        return model(x, targets=y, root_ids=root_ids)
+    return model(x, targets=y)
+
+
 @dataclass
 class TrainConfig:
     total_steps: int = 60_000
@@ -69,13 +93,14 @@ def evaluate(
     valid_loader: MemmapDataLoader,
     device: torch.device,
     eval_batches: int,
+    root_lookup: np.ndarray | None = None,
 ) -> dict[str, float]:
     model.eval()
     losses: list[float] = []
     tokens_count = 0
     for _ in range(eval_batches):
         x, y = valid_loader.get_batch(device)
-        _, loss = model(x, targets=y)
+        _, loss = _forward_with_optional_roots(model, x, y, root_lookup, device)
         if loss is None:
             continue
         losses.append(float(loss.item()))
@@ -143,6 +168,15 @@ def train_loop(
     train_loader = MemmapDataLoader(train_bin, cfg.block_size, cfg.batch_size)
     valid_loader = MemmapDataLoader(valid_bin, cfg.block_size, cfg.batch_size)
 
+    root_lookup: np.ndarray | None = None
+    if _uses_root_embeddings(model):
+        root_lookup_path = Path("data/morphology/root_ids_lookup.npy")
+        if not root_lookup_path.exists():
+            raise FileNotFoundError(
+                "Root lookup file not found at data/morphology/root_ids_lookup.npy"
+            )
+        root_lookup = np.load(root_lookup_path)
+
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=cfg.learning_rate,
@@ -176,7 +210,7 @@ def train_loop(
 
             autocast_device = "cuda" if device.type == "cuda" else "cpu"
             with torch.amp.autocast(device_type=autocast_device, enabled=use_amp, dtype=torch.float16):
-                _, loss = model(x, targets=y)
+                _, loss = _forward_with_optional_roots(model, x, y, root_lookup, device)
                 if loss is None:
                     continue
                 loss = loss / cfg.grad_accum_steps
@@ -199,7 +233,7 @@ def train_loop(
         global_step += 1
 
         if global_step % cfg.eval_every == 0:
-            eval_stats = evaluate(model, valid_loader, device, cfg.eval_batches)
+            eval_stats = evaluate(model, valid_loader, device, cfg.eval_batches, root_lookup=root_lookup)
             row = [
                 global_step,
                 round(accum_loss, 6),
