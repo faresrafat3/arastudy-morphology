@@ -4,10 +4,22 @@
 Arabic's rich morphological system derives many words from a single root, while small language models typically treat surface forms independently. This project investigates whether explicit morphological signals improve small (≤30M) Arabic decoder-only language models. We evaluate two progressive approaches: (1) morphology-aware training data that exposes root-pattern families, and (2) lightweight root-aware input features. We report baseline probing, language-model quality, and generalization to unseen forms. Results placeholders are kept until experiments complete.
 
 ## 1. Introduction
-- Problem statement: Arabic morphology is productive and may be under-modeled by standard subword training.
-- Scope: small decoder-only models (10M and 30M) under constrained compute.
-- Research questions (RQ0-RQ4) and expected evidence.
-- Contributions (to be finalized after results).
+Arabic is a morphologically rich language in which dozens of words can be derived from a single three-consonant root through systematic vowel patterns. This productive morphological system creates families of semantically related words (e.g., كَتَبَ "wrote," كَاتِب "writer," كِتَاب "book," مَكْتَبَة "library" — all from the root ك-ت-ب). Despite this rich structure, current Arabic language models treat each surface form as an independent token, relying on statistical co-occurrence rather than morphological relationships.
+
+We investigate whether small Arabic language models (≤30M parameters) can benefit from explicit morphological information, addressing three questions:
+
+1. Do standard Arabic LMs learn morphological representations implicitly? (RQ0)
+2. Does morphological training data improve these representations? (RQ1)
+3. Do lightweight root embeddings provide additional benefit? (RQ2)
+
+Our analysis of a 28.6M-parameter baseline reveals [KEY FINDING from results]. Through progressive interventions — morphological training data (Phase 1) and root embedding addition (Phase 2) — we demonstrate [MAIN RESULT].
+
+Our contributions are:
+- First systematic probing study of morphological awareness in small Arabic decoder-only transformers.
+- A morphological training data approach that [RESULT].
+- A lightweight root embedding architecture that adds only 1.8% parameters while [RESULT].
+- Layer-wise analysis revealing [LAYER FINDING], consistent with neurolinguistic evidence.
+- Complete open-source pipeline including code, morphological data, and evaluation suite.
 
 ## 2. Background: Arabic Morphology
 Arabic employs a rich morphological system centered on consonantal roots, typically consisting of three consonants that carry core semantic meaning. These roots combine with vowel patterns (أوزان) to produce diverse word forms with systematic relationships.
@@ -179,11 +191,98 @@ This pattern is consistent with neurolinguistic evidence showing that morphologi
 [Analysis — fill when results arrive!]
 
 ## 6. Discussion
-- Interpretation of gains and failure cases.
-- Limitations and external validity.
+
+### 6A. Discussion (If Phase 1/2 improve RCS clearly)
+
+#### 6A.1 Morphological Awareness in Small Arabic LMs
+
+Our results reveal that small Arabic language models exhibit a nuanced relationship with morphological structure. The baseline model (28.6M parameters) achieves an RCS of 0.132 (p < 0.001), demonstrating that standard training on Arabic text leads to partial morphological awareness even without explicit supervision. However, this awareness is concentrated in the earliest transformer layer (Layer 1: RCS = 0.169) and diminishes in deeper layers, suggesting that morphological similarity is initially captured through orthographic overlap but is progressively overwritten by contextual representations.
+
+Phase 1 (morphological training data) increases the RCS to [X], representing a [Y%] improvement over the baseline. Phase 2 (root embeddings) further improves the RCS to [Z], demonstrating that lightweight architectural modifications can complement data-level interventions.
+
+#### 6A.2 The Layer-wise Dissociation
+
+The monotonic decrease in RCS from Layer 1 to Layer 6 parallels findings in neurolinguistics, where morphological processing (~150ms) precedes semantic processing (~400ms) in human language comprehension (Rastle et al., 2004). Our models appear to follow a similar hierarchy: early layers capture form-level (morphological) similarity, while later layers prioritize meaning-level (semantic) representations.
+
+[If Phase 1/2 changes the layer pattern:] Notably, morphological training [data/root embeddings] alters this pattern, [preserving/strengthening] morphological information in deeper layers. This suggests that explicit morphological signals can help the model maintain awareness of word structure alongside contextual meaning.
+
+#### 6A.3 Capacity and Overfitting
+
+The 28.6M baseline overfits after 42K steps, while the 10M baseline overfits after only 8K steps (5× faster). This differential suggests that smaller models exhaust their capacity to learn from raw text more quickly and may benefit disproportionately from structured morphological input.
+
+[If 10M benefits more from morphological approach:] Indeed, the 10M model shows a [larger/similar] relative improvement from morphological training ([X%] vs [Y%] for the 28.6M model), supporting the hypothesis that morphological inductive bias is particularly valuable for capacity-constrained models.
+
+#### 6A.4 Limitations
+
+Several limitations should be noted:
+
+1. **Orthographic confound.** The observed Layer 1 RCS may partly reflect shared character sequences rather than true morphological awareness. Words sharing a root necessarily share consonants, making it difficult to fully disentangle orthographic from morphological similarity.
+
+2. **Root analysis accuracy.** Our morphological analysis relies on CAMeL Tools, which achieves approximately 90% accuracy. The 10% error rate introduces noise in both the morphological training data (Phase 1) and root embeddings (Phase 2).
+
+3. **Single language.** Our experiments focus exclusively on Arabic. While the approach should generalize to other Semitic languages with similar root-pattern systems (e.g., Hebrew), this remains to be verified.
+
+4. **Model scale.** We study models at 10M and 28.6M parameters. The benefits of explicit morphological encoding may diminish at larger scales where models have sufficient capacity to discover morphological patterns independently.
+
+5. **Correlation vs. causation.** Our probing methodology measures correlation between learned representations and morphological structure, not causal understanding of morphology by the model.
+
+#### 6A.5 Future Work
+
+Several directions emerge from this work:
+
+- **Cross-lingual transfer:** Applying our approach to Hebrew and other morphologically rich languages.
+- **Factored embeddings:** Replacing additive root embeddings with factored representations (word = transform × root) for stronger structural bias.
+- **Morphological attention bias:** Modifying attention to explicitly connect morphologically related tokens.
+- **Scaling analysis:** Investigating how morphological benefits interact with model size up to 1B+ parameters.
+
+### 6B. Discussion (If Phase 1/2 gains are limited)
+
+#### 6B.1 Implicit Morphological Learning
+
+Our central finding is that a 28.6M-parameter Arabic language model, trained with standard next-token prediction on Wikipedia, achieves statistically significant morphological awareness (RCS = 0.132, p < 0.001, 9.5σ). This suggests that Arabic morphological structure is partially discoverable through distributional patterns alone, consistent with connectionist theories of implicit morphological learning.
+
+#### 6B.2 The Limits of Explicit Intervention
+
+Despite the statistical significance of baseline morphological awareness, our explicit interventions show [limited/modest] additional benefit:
+
+- Phase 1 (morphological training data): RCS = [X] ([Y%] change from baseline 0.132)
+- Phase 2 (root embeddings): RCS = [Z] ([W%] change from baseline)
+
+This suggests that the model's implicit learning may already capture the morphological information that our explicit signals provide. The [small/modest] improvement indicates that more fundamental architectural changes (e.g., factored embeddings, morphological attention) may be needed to substantially improve morphological representations beyond what standard training achieves.
+
+#### 6B.3 Why Explicit Morphology May Not Help More
+
+Several factors may explain the limited improvement:
+
+1. **Distributional sufficiency:** Arabic morphological families co-occur frequently in natural text, providing rich distributional cues that standard training captures.
+
+2. **BPE alignment:** Despite breaking 48% of morpheme boundaries, BPE preserves enough sub-morphemic information for the model to reconstruct morphological relationships.
+
+3. **Representation capacity:** The model may allocate its limited capacity to contextual rather than morphological representations, regardless of training signal, because contextual information is more useful for next-token prediction.
+
+#### 6B.4 Limitations and Future Work
+
+The same limitations in Section 6A.4 apply (orthographic confound, analyzer noise, single-language scope, model-size range, and correlation-vs-causation constraints). Future work should prioritize stronger structural inductive biases (factored embeddings, morphology-aware attention) and multilingual validation.
 
 ## 7. Conclusion
-- Summary and next steps.
+
+### 7A. Conclusion (If Phase 1/2 improve RCS clearly)
+
+We investigated morphological awareness in small Arabic language models through three progressive interventions. Our baseline analysis reveals that a 28.6M-parameter model achieves partial morphological awareness (RCS = 0.132, p < 0.001), concentrated in early layers and consistent with neurolinguistic evidence of early morphological processing.
+
+Adding morphological training data (Phase 1) improves the RCS to [X] ([Y%] improvement), while root embedding addition (Phase 2) further improves it to [Z] ([W%] improvement), demonstrating that both data-level and architectural interventions can enhance morphological representations in small Arabic models.
+
+Our tokenizer analysis shows that BPE breaks 48% of regular Arabic morpheme boundaries regardless of vocabulary size, motivating morphology-aware approaches. The layer-wise probing methodology introduced here provides a tool for understanding how morphological information flows through transformer layers.
+
+We release our code, morphological training data, root embedding implementation, and evaluation suite to facilitate future work on morphologically-aware Arabic language models.
+
+### 7B. Conclusion (If gains are modest)
+
+We present the first systematic study of morphological awareness in small Arabic decoder-only transformers. Our key finding is that a 28.6M-parameter model trained on Arabic Wikipedia achieves statistically significant morphological awareness (RCS = 0.132, p < 0.001) without explicit morphological supervision. This awareness is concentrated in early layers, mirroring the hierarchy of morphological and semantic processing observed in human language comprehension.
+
+Our morphological interventions (training data and root embeddings) show [modest] improvements, suggesting that standard distributional learning captures much of the morphological structure available in Arabic text. This finding has implications for Arabic NLP: rather than adding morphological features, researchers may benefit from focusing on other bottlenecks in small model performance.
+
+We release our complete experimental pipeline, including probing methodology, morphological training data, and analysis tools.
 
 ## Evidence Checklist
 - Tables: baseline, data approach, architecture approach, ablation.
