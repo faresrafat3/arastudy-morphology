@@ -1,0 +1,13 @@
+experiment:
+  name: exp003_root_emb
+  description: "Phase 2: Root embedding addition"
+  answers: "RQ2"
+  model: configs/model/base_30m.yaml
+  training: configs/training/default.yaml
+  model_class: "RootEmbeddingTransformer"
+  root_map: data/morphology/token_root_map.json
+  data:
+    train_file: data/processed/train_phase1.txt
+    valid_file: data/processed/valid.txt
+    tokenizer_model: results/tokenizers/bpe_16k.model
+  seeds: [42]
