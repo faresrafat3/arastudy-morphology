@@ -84,7 +84,7 @@ def pretokenize_if_needed(train_file, valid_file, tokenizer_model):
     return train_bin, valid_bin
 
 
-def train_baseline(total_steps=50000):
+def train_baseline(total_steps=50000, batch_size=64, grad_accum_steps=1):
     """Train standard baseline model."""
     from src.models.transformer import from_config, count_parameters
     from src.training.trainer import TrainConfig, train_loop
@@ -104,6 +104,8 @@ def train_baseline(total_steps=50000):
 
     cfg = TrainConfig(
         total_steps=total_steps,
+        batch_size=batch_size,
+        grad_accum_steps=grad_accum_steps,
         eval_every=2000,
         save_every=10000,
         generation_every=10000,
@@ -122,7 +124,7 @@ def train_baseline(total_steps=50000):
     return result
 
 
-def train_phase1(total_steps=50000):
+def train_phase1(total_steps=50000, batch_size=64, grad_accum_steps=1):
     """Phase 1: Train with morphological data."""
     from src.models.transformer import from_config, count_parameters
     from src.training.trainer import TrainConfig, train_loop
@@ -142,6 +144,8 @@ def train_phase1(total_steps=50000):
 
     cfg = TrainConfig(
         total_steps=total_steps,
+        batch_size=batch_size,
+        grad_accum_steps=grad_accum_steps,
         eval_every=2000,
         save_every=10000,
         generation_every=10000,
@@ -160,7 +164,7 @@ def train_phase1(total_steps=50000):
     return result
 
 
-def train_phase2(total_steps=50000):
+def train_phase2(total_steps=50000, batch_size=64, grad_accum_steps=1):
     """Phase 2: Train with root embeddings."""
     import numpy as np
     import yaml
@@ -214,6 +218,8 @@ def train_phase2(total_steps=50000):
 
     cfg = TrainConfig(
         total_steps=total_steps,
+        batch_size=batch_size,
+        grad_accum_steps=grad_accum_steps,
         eval_every=2000,
         save_every=10000,
         generation_every=10000,
@@ -288,6 +294,8 @@ def main():
     parser = argparse.ArgumentParser(description="AraStudy Cloud Training")
     parser.add_argument("--experiment", required=True, choices=["baseline", "phase1", "phase2", "probe"])
     parser.add_argument("--steps", type=int, default=50000)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--grad-accum-steps", type=int, default=1)
     parser.add_argument("--probe-dir", type=str, default=None)
     args = parser.parse_args()
 
@@ -296,14 +304,21 @@ def main():
     if not download_data():
         return
 
+    if args.experiment != "probe":
+        effective_batch = args.batch_size * args.grad_accum_steps
+        print(
+            f"Training config: steps={args.steps}, batch_size={args.batch_size}, "
+            f"grad_accum_steps={args.grad_accum_steps}, effective_batch={effective_batch}"
+        )
+
     if args.experiment == "baseline":
-        train_baseline(args.steps)
+        train_baseline(args.steps, batch_size=args.batch_size, grad_accum_steps=args.grad_accum_steps)
         run_probing("results/cloud_baseline")
     elif args.experiment == "phase1":
-        train_phase1(args.steps)
+        train_phase1(args.steps, batch_size=args.batch_size, grad_accum_steps=args.grad_accum_steps)
         run_probing("results/cloud_phase1")
     elif args.experiment == "phase2":
-        train_phase2(args.steps)
+        train_phase2(args.steps, batch_size=args.batch_size, grad_accum_steps=args.grad_accum_steps)
         run_probing("results/cloud_phase2")
     elif args.experiment == "probe":
         if args.probe_dir:
