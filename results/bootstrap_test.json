@@ -1,0 +1,9 @@
+{
+  "actual_rcs": 0.132301002913771,
+  "random_rcs_mean": -2.34887726723636e-05,
+  "random_rcs_std": 0.013915319261174647,
+  "random_rcs_max": 0.04549231477522331,
+  "random_rcs_min": -0.0452795323770831,
+  "p_value": 0.0,
+  "n_bootstrap": 1000
+}
