@@ -1,0 +1,11 @@
+experiment:
+  name: exp002_morph_data
+  description: "Phase 1: Wikipedia + morphological root-word lists"
+  answers: "RQ1"
+  model: configs/model/base_30m.yaml
+  training: configs/training/default.yaml
+  data:
+    train_file: data/processed/train_phase1.txt
+    valid_file: data/processed/valid.txt
+    tokenizer_model: results/tokenizers/bpe_16k.model
+  seeds: [42]

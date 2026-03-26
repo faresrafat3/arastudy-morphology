@@ -1,0 +1,15 @@
+experiment:
+  name: "exp004_10m"
+  description: "10M baseline local training"
+  answers: "RQ-size-comparison"
+  out_dir: "results/checkpoints_10m"
+  model: "configs/model/small_10m.yaml"
+  training: "configs/training/default.yaml"
+  tokenizer:
+    type: "bpe"
+    vocab_size: null
+  data:
+    train_file: "data/processed/train.txt"
+    valid_file: "data/processed/valid.txt"
+    tokenizer_model: "results/tokenizers/bpe_16k.model"
+  seeds: [42]

@@ -1,0 +1,14 @@
+experiment:
+  name: "exp001_baseline"
+  description: "Baseline: standard BPE, no morphology"
+  answers: "RQ0"
+  model: "configs/model/base_30m.yaml"
+  training: "configs/training/default.yaml"
+  tokenizer:
+    type: "bpe"
+    vocab_size: null
+  data:
+    corpus: "data/processed/wikipedia_ar.txt"
+    train_split: 0.95
+    valid_split: 0.05
+  seeds: [42, 123, 2024]
