@@ -47,9 +47,16 @@ def mix_data(
 
 
 if __name__ == '__main__':
+    clean_path = Path('data/morphology/root_word_lists_clean.txt')
+    morph_path = (
+        'data/morphology/root_word_lists_clean.txt'
+        if clean_path.exists()
+        else 'data/morphology/root_word_lists.txt'
+    )
+
     mix_data(
         'data/processed/train.txt',
-        'data/morphology/root_word_lists.txt',
+        morph_path,
         'data/processed/train_phase1.txt',
         morph_ratio=0.05,
     )

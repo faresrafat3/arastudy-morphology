@@ -9,11 +9,23 @@ Output: data/morphology/token_root_map.json
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import sentencepiece as spm
 from camel_tools.morphology.analyzer import Analyzer
 from camel_tools.morphology.database import MorphologyDB
+
+
+ARABIC_ROOT_RE = re.compile(r'^[\u0600-\u06FF]{2,5}$')
+
+
+def is_valid_arabic_root(root: str) -> bool:
+    if not root:
+        return False
+    if '#' in root or '.' in root:
+        return False
+    return bool(ARABIC_ROOT_RE.match(root))
 
 
 def build_token_root_map(
@@ -44,9 +56,12 @@ def build_token_root_map(
             root = analyses[0].get('root', '')
             if root and root != 'NOAN':
                 clean_root = root.replace('.', '').replace(' ', '')
-                if clean_root not in root_to_id:
-                    root_to_id[clean_root] = len(root_to_id)
-                token_to_root_id[token_id] = root_to_id[clean_root]
+                if is_valid_arabic_root(clean_root):
+                    if clean_root not in root_to_id:
+                        root_to_id[clean_root] = len(root_to_id)
+                    token_to_root_id[token_id] = root_to_id[clean_root]
+                else:
+                    token_to_root_id[token_id] = 0
             else:
                 token_to_root_id[token_id] = 0
         else:
