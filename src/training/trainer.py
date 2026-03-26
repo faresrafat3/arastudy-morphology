@@ -284,6 +284,7 @@ def train_experiment(config_path: str) -> None:
     model_cfg_path = exp_cfg.get("model", "configs/model/base_30m.yaml")
     train_cfg_path = exp_cfg.get("training", "configs/training/default.yaml")
     data_cfg = exp_cfg.get("data", {})
+    out_dir = exp_cfg.get("out_dir", "results/checkpoints")
 
     train_text = data_cfg.get("train_file", "data/processed/train.txt")
     valid_text = data_cfg.get("valid_file", "data/processed/valid.txt")
@@ -325,7 +326,7 @@ def train_experiment(config_path: str) -> None:
         train_bin=str(train_bin),
         valid_bin=str(valid_bin),
         cfg=train_cfg,
-        out_dir="results/checkpoints",
+        out_dir=str(out_dir),
     )
 
     params = count_parameters(model)
