@@ -231,6 +231,15 @@ produces positive RCS across *all* layers:
 | L5 | -0.024 | -0.025 | +0.004 |
 | L6 | -0.034 | +0.068 | +0.041 |
 
+**Root embedding utilization.** The learned scaling factor α,
+initialized at 0.1, increased to 0.74 during training — a 7.4×
+increase. This indicates that the model actively leverages root
+information, choosing to allocate substantial representational
+weight to morphological structure rather than relying solely on
+BPE token embeddings. This learned reliance on root information
+is consistent with the improved val_loss and the stabilized
+layer-wise morphological signal observed in Phase 2.
+
 This pattern indicates that root embeddings create a more uniform
 morphological representation, maintaining positive (though small)
 morphological signal across all layers, eliminating the negative values seen in
