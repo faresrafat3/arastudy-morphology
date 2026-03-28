@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import csv
+import json
 import math
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -76,6 +78,42 @@ class MemmapDataLoader:
         x_t = torch.from_numpy(x).to(device)
         y_t = torch.from_numpy(y).to(device)
         return x_t, y_t
+
+
+def _find_latest_checkpoint(output_dir: Path) -> tuple[Path, int] | None:
+    pattern = re.compile(r"checkpoint_step_(\d+)\.pt$")
+    latest_step = -1
+    latest_path: Path | None = None
+    for path in output_dir.glob("checkpoint_step_*.pt"):
+        match = pattern.search(path.name)
+        if not match:
+            continue
+        step = int(match.group(1))
+        if step > latest_step:
+            latest_step = step
+            latest_path = path
+    if latest_path is None:
+        return None
+    return latest_path, latest_step
+
+
+def _best_val_from_csv(csv_path: Path) -> float:
+    if not csv_path.exists():
+        return float("inf")
+    best_val = float("inf")
+    with open(csv_path, encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            value = row.get("val_loss", "")
+            if not value:
+                continue
+            try:
+                val = float(value)
+            except ValueError:
+                continue
+            if val < best_val:
+                best_val = val
+    return best_val
 
 
 def build_lr_scheduler(step: int, total_steps: int, warmup_steps: int, base_lr: float) -> float:
@@ -188,15 +226,26 @@ def train_loop(
     scaler = torch.amp.GradScaler(device="cuda", enabled=use_amp)
 
     csv_path = output_dir / "train_log.csv"
-    with open(csv_path, "w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["step", "train_loss", "val_loss", "ppl", "lr", "tokens_per_sec"])
+    if not csv_path.exists() or csv_path.stat().st_size == 0:
+        with open(csv_path, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["step", "train_loss", "val_loss", "ppl", "lr", "tokens_per_sec"])
 
-    best_val = float("inf")
+    best_val = _best_val_from_csv(csv_path)
     patience_count = 0
     best_ckpt = output_dir / "best.pt"
 
     global_step = 0
+    latest_ckpt = _find_latest_checkpoint(output_dir)
+    if latest_ckpt is not None:
+        ckpt_path, ckpt_step = latest_ckpt
+        state = torch.load(ckpt_path, map_location=device)
+        model_state = state.get("model") if isinstance(state, dict) else None
+        if model_state is None:
+            raise ValueError(f"Checkpoint at {ckpt_path} does not contain model state")
+        model.load_state_dict(model_state)
+        global_step = int(state.get("step", ckpt_step)) if isinstance(state, dict) else ckpt_step
+
     tokens_seen = 0
     started = time.time()
 
@@ -279,9 +328,14 @@ def _load_yaml(path: str) -> dict[str, Any]:
 
 def train_experiment(config_path: str) -> None:
     from src.data.tokenizer import load_tokenizer
+    from src.models.morph_transformer import RootEmbeddingTransformer
+    from src.models.transformer import ModelArgs
 
     exp_cfg = _load_yaml(config_path).get("experiment", {})
+    exp_name = str(exp_cfg.get("name", Path(config_path).stem))
     model_cfg_path = exp_cfg.get("model", "configs/model/base_30m.yaml")
+    model_class = str(exp_cfg.get("model_class", "AraStudyTransformer"))
+    root_map_path = exp_cfg.get("root_map", "data/morphology/token_root_map.json")
     train_cfg_path = exp_cfg.get("training", "configs/training/default.yaml")
     data_cfg = exp_cfg.get("data", {})
     out_dir = exp_cfg.get("out_dir", "results/checkpoints")
@@ -292,8 +346,8 @@ def train_experiment(config_path: str) -> None:
 
     tokenized_dir = Path("data/tokenized")
     tokenized_dir.mkdir(parents=True, exist_ok=True)
-    train_bin = tokenized_dir / "train.bin"
-    valid_bin = tokenized_dir / "valid.bin"
+    train_bin = tokenized_dir / f"{exp_name}_train.bin"
+    valid_bin = tokenized_dir / f"{exp_name}_valid.bin"
 
     if not train_bin.exists():
         pretokenize(train_text, tokenizer_model, str(train_bin))
@@ -301,7 +355,37 @@ def train_experiment(config_path: str) -> None:
         pretokenize(valid_text, tokenizer_model, str(valid_bin))
 
     tokenizer = load_tokenizer(tokenizer_model)
-    model = from_config(model_cfg_path, vocab_size=tokenizer.get_piece_size())
+    if model_class == "RootEmbeddingTransformer":
+        with open(model_cfg_path, encoding="utf-8") as handle:
+            model_cfg = yaml.safe_load(handle).get("model", {})
+
+        with open(root_map_path, encoding="utf-8") as handle:
+            root_map = json.load(handle)
+
+        num_roots = int(root_map.get("stats", {}).get("unique_roots", 0))
+        token_to_root = root_map.get("token_to_root_id", {})
+        vocab_size = tokenizer.get_piece_size()
+        root_ids_array = np.zeros(vocab_size, dtype=np.int64)
+        for token_id_str, root_id in token_to_root.items():
+            token_id = int(token_id_str)
+            if 0 <= token_id < vocab_size:
+                root_ids_array[token_id] = int(root_id)
+
+        root_lookup_path = Path("data/morphology/root_ids_lookup.npy")
+        root_lookup_path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(root_lookup_path, root_ids_array)
+
+        args = ModelArgs(
+            dim=int(model_cfg.get("dim", 512)),
+            n_layers=int(model_cfg.get("n_layers", 6)),
+            n_heads=int(model_cfg.get("n_heads", 8)),
+            vocab_size=vocab_size,
+            max_seq_len=int(model_cfg.get("max_seq_len", 512)),
+            dropout=float(model_cfg.get("dropout", 0.1)),
+        )
+        model = RootEmbeddingTransformer(args, num_roots=num_roots + 1)
+    else:
+        model = from_config(model_cfg_path, vocab_size=tokenizer.get_piece_size())
 
     train_cfg_dict = _load_yaml(train_cfg_path).get("training", {})
     train_cfg = TrainConfig(

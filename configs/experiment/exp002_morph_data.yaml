@@ -2,6 +2,7 @@ experiment:
   name: exp002_morph_data
   description: "Phase 1: Wikipedia + morphological root-word lists"
   answers: "RQ1"
+  out_dir: "results/checkpoints_phase1"
   model: configs/model/base_30m.yaml
   training: configs/training/default.yaml
   data:

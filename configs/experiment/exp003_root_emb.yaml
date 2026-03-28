@@ -2,6 +2,7 @@ experiment:
   name: exp003_root_emb
   description: "Phase 2: Root embedding addition"
   answers: "RQ2"
+  out_dir: "results/checkpoints_phase2"
   model: configs/model/base_30m.yaml
   training: configs/training/default.yaml
   model_class: "RootEmbeddingTransformer"
