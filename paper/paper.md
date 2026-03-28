@@ -314,6 +314,26 @@ This comes at the cost of reduced Layer 1 discrimination
 early morphological clustering and distributed morphological
 awareness.
 
+### 6.4 Limitations
+
+1. **Single corpus.** All experiments use Arabic Wikipedia only.
+	Results may differ with other Arabic text sources.
+
+2. **Model scale.** We study 10M and 28.6M models only.
+	Benefits may diminish at larger scales.
+
+3. **BPE tokenizer.** We use standard BPE-16K without
+	morphological pre-segmentation.
+
+4. **RCS metric.** Root Clustering Score is novel and not
+	yet established in the literature.
+
+5. **No human evaluation.** We rely on automatic metrics
+	and qualitative generation inspection.
+
+6. **Root analysis accuracy.** CAMeL Tools achieves ~90%
+	accuracy, introducing noise in morphological labels.
+
 ## 7. Conclusion
 We present the first systematic study of morphological
 representation in small Arabic decoder-only transformers.
