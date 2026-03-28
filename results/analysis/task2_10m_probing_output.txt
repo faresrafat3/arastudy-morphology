@@ -1,0 +1,8 @@
+Found 10M checkpoints: ['results/checkpoints_10m/best.pt']
+Using: results/checkpoints_10m/best.pt
+
+10M Results:
+  RCS: 0.1127
+  Control: -0.0166
+  Selectivity: 0.1293
+Saved to results/analysis/task2_10m_probing.json
