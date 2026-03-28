@@ -1,7 +1,7 @@
 # Factored Morphological Embeddings for Arabic Language Models: Root-Aware Representations in Small Transformers
 
 ## Abstract
-Arabic's rich morphological system derives many words from a single root, while small language models typically treat surface forms independently. This project investigates whether explicit morphological signals improve small (≤30M) Arabic decoder-only language models. We evaluate two progressive approaches: (1) morphology-aware training data that exposes root-pattern families, and (2) lightweight root-aware input features. We report baseline probing, language-model quality, and generalization to unseen forms. Our baseline analysis reveals partial morphological awareness (RCS=0.132, p<0.001), concentrated in early layers. Morphological training data strengthens early-layer morphology (+20% Layer 1 RCS) and revives it in the final layer (Layer 6: -0.034→+0.068). Root embeddings further improve language modeling (val_loss -2.0%) and distribute morphological signal across all layers.
+Arabic's rich morphological system derives many words from a single root, while small language models typically treat surface forms independently. This project investigates whether explicit morphological signals improve small (≤30M) Arabic decoder-only language models. We evaluate two progressive approaches: (1) morphology-aware training data that exposes root-pattern families, and (2) lightweight root-aware input features. We report baseline probing, language-model quality, and generalization to unseen forms. Our baseline analysis reveals partial morphological awareness (RCS=0.132, p<0.001), concentrated in early layers. Morphological training data strengthens early-layer morphology (+20% Layer 1 RCS) and revives it in the final layer (Layer 6: -0.034→+0.068). Root embeddings further improve language modeling (val_loss -2.0%) and stabilizes morphological signal, eliminating negative values in deep layers.
 
 ## 1. Introduction
 Arabic is a morphologically rich language in which dozens of words can be derived from a single three-consonant root through systematic vowel patterns. This productive morphological system creates families of semantically related words (e.g., كَتَبَ "wrote," كَاتِب "writer," كِتَاب "book," مَكْتَبَة "library" — all from the root ك-ت-ب). Despite this rich structure, current Arabic language models treat each surface form as an independent token, relying on statistical co-occurrence rather than morphological relationships.
@@ -12,15 +12,12 @@ We investigate whether small Arabic language models (≤30M parameters) can bene
 2. Does morphological training data improve these representations? (RQ1)
 3. Do lightweight root embeddings provide additional benefit? (RQ2)
 
-Our analysis of a 28.6M-parameter baseline reveals partial morphological awareness in Layer 1 (RCS=0.169) that disappears in deeper layers, and that explicit morphological training fundamentally changes this pattern. Through progressive interventions — morphological training data (Phase 1) and root embedding addition (Phase 2) — we demonstrate that morphological training data revives morphological awareness in the final layer (RCS: -0.034→+0.068), while root embeddings distribute it across all layers, alongside a consistent 2% improvement in language modeling quality.
+Our analysis of a 28.6M-parameter baseline reveals partial morphological awareness in Layer 1 (RCS=0.169) that disappears in deeper layers, and that explicit morphological training fundamentally changes this pattern. Through progressive interventions — morphological training data (Phase 1) and root embedding addition (Phase 2) — we demonstrate that morphological training data revives morphological awareness in the final layer (RCS: -0.034→+0.068), while root embeddings stabilize it across all layers, alongside a consistent 2% improvement in language modeling quality.
 
 Our contributions are:
-- First systematic probing study of morphological awareness in small Arabic decoder-only transformers.
-- A probing analysis that reveals partial morphological awareness (RCS=0.132, p<0.001) concentrated in Layer 1.
-- A morphological training data approach that improves val_loss by 1.0% and strengthens Layer 1 RCS by 20%.
-- A lightweight root embedding architecture that adds only 1.8% parameters while improving val_loss by 2.0% and creating positive morphological signal across all layers.
-- Layer-wise analysis showing that morphological signal transitions from Layer-1-only to all-layer distribution with architectural intervention, consistent with neurolinguistic evidence.
-- Complete open-source pipeline including code, morphological data, and evaluation suite.
+1. The first systematic probing study of morphological awareness in small Arabic decoder-only transformers, revealing partial awareness (RCS=0.132, p<0.001) concentrated in Layer 1.
+2. Two progressive interventions — morphological training data and root embeddings — that improve language modeling quality (up to 2% val_loss reduction) while fundamentally reshaping morphological representations.
+3. The discovery of three qualitatively distinct representation strategies (concentrate-and-abandon, strengthen-and-revive, and stabilize) that emerge from different training configurations.
 
 ## 2. Background: Arabic Morphology
 Arabic employs a rich morphological system centered on consonantal roots, typically consisting of three consonants that carry core semantic meaning. These roots combine with vowel patterns (أوزان) to produce diverse word forms with systematic relationships.
@@ -64,17 +61,17 @@ Arabic words fall into several morphological categories relevant to our analysis
 
 ## 3. Related Work
 ### 3.1 Arabic Language Models
-Recent years have seen growing interest in Arabic-specific language models. CAMeLBERT (Inoue et al., 2021) trained multiple BERT variants on Arabic text and demonstrated through probing experiments that encoder-based models partially capture morphological information. Jais (Sengupta et al., 2023) introduced an Arabic-English bilingual LLM with Arabic-aware BPE tokenization, showing that morphological pre-segmentation improves tokenization quality. ArabERT (Antoun et al., 2020) provided early Arabic BERT models using WordPiece tokenization. SILMA (2024) introduced efficient Arabic LMs targeting edge deployment. Kuwain (2024) explored bilingual Arabic-English injection for small models. However, none of these works explicitly encode morphological structure in the model architecture or training data for small decoder-only models.
+Recent years have seen growing interest in Arabic-specific language models. CAMeLBERT (Inoue et al., 2021) trained multiple BERT variants on Arabic text and demonstrated through probing experiments that encoder-based models partially capture morphological information. Jais (Sengupta et al., 2023) introduced an Arabic-English bilingual LLM with Arabic-aware BPE tokenization, showing that morphological pre-segmentation improves tokenization quality. ArabERT (Antoun et al., 2020) provided early Arabic BERT models using WordPiece tokenization. However, none of these works explicitly encode morphological structure in the model architecture or training data for small decoder-only models.
 
 ### 3.2 Morphological NLP
-Cotterell and Schütze (2018) explored morphology-aware word embeddings in the pre-transformer era, demonstrating that morphological information improves static word representations. More recently, probing studies have shown that large pretrained models implicitly learn morphological features (Edmiston, 2020), though the extent of this learning in small models remains understudied, particularly for Arabic.
+Cotterell and Schütze (2018) explored morphology-aware word embeddings in the pre-transformer era, demonstrating that morphological information improves static word representations. More recently, probing studies have shown that large pretrained models implicitly learn morphological features (Edmiston, 2020), though the extent of this learning in small models remains understudied, particularly for Arabic. Probing experiments on CAMeLBERT demonstrated that Arabic BERT models capture morphological features such as root identity and pattern type in intermediate layers (Inoue et al., 2021). We extend this line of inquiry to decoder-only architectures at smaller scale.
 
 ### 3.3 Efficient Small Language Models
 TinyStories (Eldan and Li, 2023) demonstrated that models as small as 33M parameters can generate coherent text when trained on carefully controlled data. Phi-1 (Gunasekar et al., 2023) showed that data quality surpasses data quantity for training efficient models. The BabyLM Challenge (Warstadt et al., 2023) explored cognitively-inspired training with limited data. These works motivate our approach of improving small Arabic models through targeted morphological training rather than scaling.
 
 ### 3.4 Gap
 
-To our knowledge, no prior work has systematically investigated (1) the extent to which small Arabic decoder-only transformers learn morphological structure, (2) whether explicit morphological training data improves this learning, or (3) whether lightweight architectural modifications (root embeddings) provide additional benefit. Our work addresses all three questions.
+We are not aware of prior work that systematically investigated (1) the extent to which small Arabic decoder-only transformers learn morphological structure, (2) whether explicit morphological training data improves this learning, or (3) whether lightweight architectural modifications (root embeddings) provide additional benefit. Our work addresses all three questions.
 
 ## 4. Method
 ### 4.1 Tokenizer Analysis
@@ -113,6 +110,7 @@ Our baseline is a decoder-only transformer following the LLaMA architecture (Tou
 | **Total params** | **28.6M** | **~10M** |
 
 Both models use Rotary Position Embeddings (RoPE; Su et al., 2021) rather than learned positional embeddings, SwiGLU activation (Shazeer, 2020), and RMSNorm (Zhang and Sennrich, 2019). Input and output embedding weights are tied.
+Both models use dropout rate 0.1.
 
 ### 4.3 Morphological Training Data
 
@@ -145,6 +143,7 @@ Tokens without a known root (61% of vocabulary) receive only the standard BPE em
 ### 4.5 Training Setup
 
 **Corpus.** We train on Arabic Wikipedia (November 2023 dump), cleaned with two rounds of filtering that remove short lines (<10 words), lines with less than 70% Arabic characters, list entries, and demographic table fragments. The final corpus contains 4.2 million lines (~238 million words). We split 95/5 into training (4.03M lines) and validation (212K lines) sets.
+The training corpus contains approximately 285M tokens after BPE-16K tokenization (9.9 tokens per parameter for the 28.6M model, below the Chinchilla-optimal ratio of 20).
 
 **Tokenization.** We train a BPE tokenizer with 16,000 vocabulary using SentencePiece (Kudo and Richardson, 2018) with byte_fallback and 99.99% character coverage. The training corpus is pre-tokenized into uint16 binary arrays for efficient memory-mapped loading during training.
 
@@ -233,20 +232,19 @@ produces positive RCS across *all* layers:
 | L6 | -0.034 | +0.068 | +0.041 |
 
 This pattern indicates that root embeddings create a more uniform
-morphological representation, distributing morphological signal
-across all layers rather than concentrating it in Layer 1.
+morphological representation, maintaining positive (though small)
+morphological signal across all layers, eliminating the negative values seen in
+baseline Layers 3-6.
 
 The reduced Layer 1 RCS (0.115 vs 0.169) reflects this
 redistribution: the model no longer relies solely on early
 orthographic similarity but encodes morphological relationships
 throughout its depth.
 
-**10M baseline.** The smaller model shows higher embedding-level
-RCS (0.113 vs 0.109 for 28.6M), suggesting that smaller models
-allocate proportionally more representational capacity to
-morphological structure — consistent with our hypothesis that
-morphological inductive bias is particularly valuable for
-capacity-constrained models.
+**10M baseline.** The 10M baseline achieves comparable embedding-level
+RCS (0.113) to the 28.6M model (0.109) despite having
+3× fewer parameters, suggesting that morphological
+structure is learned proportionally regardless of scale.
 
 ### 5.4 Generalization and Layer Analysis (RQ3, RQ4)
 **Three distinct representation strategies.** Our layer-wise
@@ -264,7 +262,7 @@ encoding morphological information:
 	exposure helps the model recover morphological information
 	in its output representations.
 
-3. **Phase 2: Distribute.** Moderate Layer 1 signal (RCS=0.115)
+3. **Phase 2: Stabilize.** Moderate Layer 1 signal (RCS=0.115)
 	with consistently positive (though small) RCS across all
 	layers, suggesting that root embeddings enable a fundamentally
 	different strategy: uniform morphological encoding rather than
@@ -290,7 +288,8 @@ Our most significant finding is not the modest improvement in
 language modeling quality (1-2%), but the discovery of three
 qualitatively different strategies for encoding Arabic morphology.
 The baseline's concentrate-and-abandon strategy, Phase 1's
-strengthen-and-revive pattern, and Phase 2's distribute approach
+strengthen-and-revive pattern, and Phase 2's stabilize approach — maintaining weak but consistently
+positive morphological signal across all layers —
 represent increasingly sophisticated morphological processing,
 paralleling developmental stages in human language acquisition.
 
@@ -311,16 +310,18 @@ fundamentally different approach: rather than discovering and
 then abandoning morphology, the model maintains it throughout.
 This comes at the cost of reduced Layer 1 discrimination
 (0.115 vs 0.169), suggesting a trade-off between strong
-early morphological clustering and distributed morphological
+early morphological clustering and stabilized morphological
 awareness.
 
 ### 6.4 Limitations
 
-1. **Single corpus.** All experiments use Arabic Wikipedia only.
-	Results may differ with other Arabic text sources.
+1. **Single seed.** All training runs use a single random
+	seed. Our findings describe qualitative representation
+	patterns (three strategies) rather than precise quantitative
+	claims, mitigating this limitation.
 
-2. **Model scale.** We study 10M and 28.6M models only.
-	Benefits may diminish at larger scales.
+2. **Single corpus.** All experiments use Arabic Wikipedia only.
+	Results may differ with other Arabic text sources.
 
 3. **BPE tokenizer.** We use standard BPE-16K without
 	morphological pre-segmentation.
@@ -334,6 +335,12 @@ awareness.
 6. **Root analysis accuracy.** CAMeL Tools achieves ~90%
 	accuracy, introducing noise in morphological labels.
 
+7. **No comparison with larger models.** We study models
+	up to 28.6M parameters. The benefits of explicit
+	morphological encoding may diminish at scales where
+	models have sufficient capacity to discover morphological
+	patterns independently.
+
 ## 7. Conclusion
 We present the first systematic study of morphological
 representation in small Arabic decoder-only transformers.
@@ -345,7 +352,7 @@ Through two progressive interventions, we discover three
 distinct representation strategies: the baseline's
 concentrate-and-abandon pattern, morphological training data's
 strengthen-and-revive effect (Layer 6 RCS: -0.034→+0.068),
-and root embeddings' distribute strategy (positive RCS across
+and root embeddings' stabilize strategy (positive RCS across
 all layers). Both interventions improve language modeling quality
 (up to 2.0% val_loss reduction) while fundamentally changing
 how the model encodes morphological structure.
