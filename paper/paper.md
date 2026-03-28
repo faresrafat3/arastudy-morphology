@@ -368,3 +368,33 @@ further research.
 ## Evidence Checklist
 - Tables: baseline, data approach, architecture approach, ablation.
 - Figures: root clustering, unseen forms, layer-wise probing.
+
+## References
+
+Antoun, W., Baly, F., & Hajj, H. (2020). AraBERT: Transformer-based Model for Arabic Language Understanding. *Proceedings of the 4th Workshop on Open-Source Arabic Corpora and Processing Tools*.
+
+Cotterell, R., & Schütze, H. (2018). Joint Semantic Synthesis and Morphological Analysis of the Derived Word. *Transactions of the ACL*, 6, 33-48.
+
+Eldan, R., & Li, Y. (2023). TinyStories: How Small Can Language Models Be and Still Speak Coherent English? *arXiv preprint arXiv:2305.07759*.
+
+Gunasekar, S., et al. (2023). Textbooks Are All You Need. *arXiv preprint arXiv:2306.11644*.
+
+Inoue, G., et al. (2021). The Interplay of Variant, Size, and Task Type in Arabic Pre-trained Language Models. *Proceedings of the Sixth Arabic Natural Language Processing Workshop*.
+
+Obeid, O., et al. (2020). CAMeL Tools: An Open Source Python Toolkit for Arabic Natural Language Processing. *Proceedings of LREC 2020*.
+
+Rastle, K., Davis, M.H., & New, B. (2004). The Broth in My Brother's Brothel: Morpho-Orthographic Segmentation in Visual Word Recognition. *Psychonomic Bulletin & Review*, 11(6), 1090-1098.
+
+Sengupta, N., et al. (2023). Jais and Jais-chat: Arabic-Centric Foundation and Instruction-Tuned Open Generative Large Language Models. *arXiv preprint arXiv:2308.16149*.
+
+Sennrich, R., Haddow, B., & Birch, A. (2016). Neural Machine Translation of Rare Words with Subword Units. *Proceedings of ACL 2016*.
+
+Shazeer, N. (2020). GLU Variants Improve Transformer. *arXiv preprint arXiv:2002.05202*.
+
+Su, J., et al. (2021). RoFormer: Enhanced Transformer with Rotary Position Embedding. *arXiv preprint arXiv:2104.09864*.
+
+Touvron, H., et al. (2023). LLaMA: Open and Efficient Foundation Language Models. *arXiv preprint arXiv:2302.13971*.
+
+Warstadt, A., et al. (2023). Findings of the BabyLM Challenge: Sample-Efficient Pretraining on Developmentally Plausible Corpora. *Proceedings of the BabyLM Challenge*.
+
+Zhang, B., & Sennrich, R. (2019). Root Mean Square Layer Normalization. *Advances in Neural Information Processing Systems*, 32.
