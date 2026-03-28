@@ -1,0 +1,95 @@
+{
+  "backend": "camel_tools",
+  "num_tokens": 16000,
+  "used_words": 8000,
+  "skipped_non_arabic": 1855,
+  "num_roots_total": 1349,
+  "num_roots_valid": 745,
+  "sampled_pairs": 4422,
+  "same_root_cosine_mean": 0.5479604020334237,
+  "random_pair_cosine_mean": 0.46277582371208253,
+  "delta": 0.08518457832134113,
+  "interpretation": "positive_delta_same_root_closer",
+  "top_roots_by_count": [
+    {
+      "root": "NTWS",
+      "count": 598
+    },
+    {
+      "root": "#.#.ل",
+      "count": 92
+    },
+    {
+      "root": "ر.#.#",
+      "count": 59
+    },
+    {
+      "root": "ج.م.ع",
+      "count": 58
+    },
+    {
+      "root": "ع.ل.م",
+      "count": 49
+    },
+    {
+      "root": "#.#.ن",
+      "count": 45
+    },
+    {
+      "root": "د.#.ر",
+      "count": 43
+    },
+    {
+      "root": "ع.م.ل",
+      "count": 42
+    },
+    {
+      "root": "ع.د.د",
+      "count": 40
+    },
+    {
+      "root": "ق.#.م",
+      "count": 40
+    },
+    {
+      "root": "ك.#.ن",
+      "count": 38
+    },
+    {
+      "root": "#.د.#",
+      "count": 37
+    },
+    {
+      "root": "#.#.#",
+      "count": 37
+    },
+    {
+      "root": "ن.#.#",
+      "count": 36
+    },
+    {
+      "root": "م.ر.ر",
+      "count": 36
+    },
+    {
+      "root": "#.ل.#",
+      "count": 32
+    },
+    {
+      "root": "ر.#.س",
+      "count": 32
+    },
+    {
+      "root": "ح.#.#",
+      "count": 30
+    },
+    {
+      "root": "ش.ر.ك",
+      "count": 29
+    },
+    {
+      "root": "ك.ت.ب",
+      "count": 29
+    }
+  ]
+}

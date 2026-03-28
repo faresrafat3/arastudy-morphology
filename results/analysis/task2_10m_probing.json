@@ -1,0 +1,6 @@
+{
+  "checkpoint": "results/checkpoints_10m/best.pt",
+  "rcs": 0.11266915743951406,
+  "control_rcs": 0.007198522570451726,
+  "selectivity": 0.10547063486906233
+}
